@@ -28,6 +28,8 @@ export const register = async (req, res) => {
 
     const userId = await UserModel.createUser(name, username, password, role);
 
+    console.log(`🟢 User baru terdaftar: ${username}, Role: ${role}`);
+
     res.status(201).json({
       message: "User berhasil terdaftar",
       userId,
@@ -46,11 +48,13 @@ export const login = async (req, res) => {
 
     const user = await UserModel.findByUsername(username);
     if (!user) {
+      console.log(`⛔ Login gagal, user tidak ditemukan: ${username}`);
       return res.status(401).json({ message: "User tidak ditemukan" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.log(`⛔ Password salah untuk username: ${username}`);
       return res.status(401).json({ message: "Password salah" });
     }
 
@@ -64,6 +68,15 @@ export const login = async (req, res) => {
       JWT_SECRET,
       { expiresIn: "1h" }
     );
+
+    // 🔥 Tampilkan token di terminal setiap login
+    console.log("==================================");
+    console.log("🔐 LOGIN BERHASIL");
+    console.log("👤 User:", user.username);
+    console.log("📌 Role:", user.role);
+    console.log("🔑 TOKEN JWT:");
+    console.log(token);
+    console.log("==================================");
 
     res.json({
       message: "Login berhasil",

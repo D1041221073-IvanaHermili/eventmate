@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useIsFocused } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
@@ -20,6 +21,7 @@ export default function AdminEvents() {
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const isFocused = useIsFocused();
 
   const formatTime = (time) => {
     if (!time) return "-";
@@ -28,19 +30,25 @@ export default function AdminEvents() {
   };
 
   const formatDate = (dateStr) => {
-    if (!dateStr) return "-";
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString("id-ID", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
+  if (!dateStr) return "-";
+
+  // tanggal backend 100% pasti "YYYY-MM-DD"
+  const [y, m, d] = dateStr.split("-");
+
+  const bulan = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+  ];
+
+    return `${d} ${bulan[Number(m) - 1]} ${y}`;
   };
+
 
   const loadEvents = async () => {
     try {
       const res = await api.get("/events");
+      console.log("EVENTS>>>", res.data.events);
+
       setEvents(res.data.events || []);
     } catch (err) {
       Toast.show({
@@ -55,8 +63,11 @@ export default function AdminEvents() {
   };
 
   useEffect(() => {
+  if (isFocused) {
+    setLoading(true);  // biar indikator muncul lagi
     loadEvents();
-  }, []);
+  }
+}, [isFocused]);
 
   const handleDelete = async (id) => {
     try {
