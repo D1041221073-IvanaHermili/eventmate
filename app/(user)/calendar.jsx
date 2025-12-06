@@ -36,13 +36,15 @@ const extractDate = (val) => {
   return `${y}-${m}-${day}`;
 };
 
-
 /* 🔥 FIX: Format tanggal tanpa Date() */
 const formatDate = (iso) => {
   if (!iso) return "";
   const [y, m, d] = iso.split("-");
   return `${d}-${m}-${y}`;
 };
+
+// Helper format waktu hh:mm
+const formatTime = (t) => (t ? t.substring(0, 5) : "-");
 
 export default function UserCalendar() {
   const { token } = useAuth();
@@ -58,6 +60,16 @@ export default function UserCalendar() {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+
+  // Helper Style Kategori (Sama seperti Index)
+  const getCategoryStyle = (category) => {
+    const cat = category || "Tanpa Kategori";
+    return theme.categories?.[cat] || theme.categories?.["Tanpa Kategori"] || {
+      bg: theme.card,
+      text: theme.text,
+      border: theme.border
+    };
+  };
 
   const loadMyEvents = async () => {
     try {
@@ -90,7 +102,11 @@ export default function UserCalendar() {
     if (!date) return;
 
     if (!marked[date]) marked[date] = { dots: [] };
-    marked[date].dots.push({ color: theme.primary });
+    // Cek duplikasi dot agar tidak menumpuk visualnya
+    const hasDot = marked[date].dots.some(d => d.color === theme.primary);
+    if (!hasDot) {
+      marked[date].dots.push({ color: theme.primary });
+    }
 
     if (date === selectedDate) {
       marked[date].selected = true;
@@ -135,22 +151,23 @@ export default function UserCalendar() {
       contentContainerStyle={{ padding: 20 }}
       showsVerticalScrollIndicator={false}
     >
+      {/* HEADER */}
       <View style ={{
         flexDirection: "row",
         justifyContent:"space-between",
         alignItems: "center",
         marginBottom: 10
       }}>
-      <Text
-        style={{
-          fontSize: 22,
-          fontWeight: "bold",
-          marginBottom: 10,
-          color: theme.text,
-        }}
-      >
-        🗓️ Kalender Event Kamu
-      </Text>
+        <Text
+          style={{
+            fontSize: 22,
+            fontWeight: "bold",
+            marginBottom: 10,
+            color: theme.text,
+          }}
+        >
+          🗓️ Kalender Event
+        </Text>
 
         <TouchableOpacity 
           onPress={toggleTheme}
@@ -171,10 +188,11 @@ export default function UserCalendar() {
         </TouchableOpacity>
       </View>
 
+      {/* CALENDAR */}
       <Calendar
         markedDates={marked}
         markingType="multi-dot"
-        onDayPress={(day) => setSelectedDate(day.dateString)} // aman
+        onDayPress={(day) => setSelectedDate(day.dateString)}
         onMonthChange={(m) => setMonth({ year: m.year, month: m.month })}
         theme={{
           calendarBackground: theme.card,
@@ -202,6 +220,7 @@ export default function UserCalendar() {
         }}
       />
 
+      {/* HOLIDAY INFO */}
       {selectedHoliday && (
         <View
           style={{
@@ -225,6 +244,7 @@ export default function UserCalendar() {
         </View>
       )}
 
+      {/* EVENT LIST HEADER */}
       <Text
         style={{
           fontSize: 18,
@@ -238,6 +258,7 @@ export default function UserCalendar() {
           : "Pilih tanggal"}
       </Text>
 
+      {/* EVENT LIST ITEMS */}
       {eventsOfDay.length > 0 ? (
         eventsOfDay.map((ev) => (
           <TouchableOpacity
@@ -276,7 +297,8 @@ export default function UserCalendar() {
                 color={theme.textSecondary}
               />
               <Text style={{ marginLeft: 6, color: theme.textSecondary }}>
-                {ev.start_time} - {ev.end_time}
+                {/* Format waktu hh:mm */}
+                {formatTime(ev.start_time)} - {formatTime(ev.end_time)}
               </Text>
             </View>
 
@@ -312,86 +334,125 @@ export default function UserCalendar() {
         </View>
       )}
 
-      {/* MODAL */}
-      <Modal animationType="slide" transparent visible={modalVisible}>
+      {/* MODAL DETAIL (Full Info Style) */}
+      <Modal visible={modalVisible} transparent animationType="fade">
         <View
           style={{
             flex: 1,
             backgroundColor: theme.overlay,
             justifyContent: "center",
+            alignItems: "center",
             padding: 20,
           }}
         >
           <View
             style={{
               backgroundColor: theme.card,
-              borderRadius: 16,
-              padding: 20,
-              elevation: 10,
+              borderRadius: 24,
+              padding: 24,
+              width: "100%",
+              maxWidth: 420,
+              shadowColor: theme.shadow,
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.3,
+              shadowRadius: 16,
+              elevation: 16,
             }}
           >
+            {/* Header: Title & Close Button */}
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+              <View style={{ flex: 1, marginRight: 10 }}>
+                <Text style={{ fontSize: 20, fontWeight: "bold", color: theme.text }}>
+                  {selectedEvent?.title}
+                </Text>
+              </View>
+              
+              {/* Tombol X di kanan atas */}
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={{
+                  backgroundColor: theme.border,
+                  padding: 8,
+                  borderRadius: 20,
+                }}
+              >
+                <MaterialIcons name="close" size={20} color={theme.text} />
+              </TouchableOpacity>
+            </View>
+
             {selectedEvent && (
               <>
+                {/* Category Pill */}
                 <Text
                   style={{
-                    fontSize: 20,
-                    fontWeight: "bold",
-                    marginBottom: 10,
-                    color: theme.text,
+                    alignSelf: "flex-start",
+                    backgroundColor: getCategoryStyle(selectedEvent.category).bg,
+                    paddingHorizontal: 12,
+                    paddingVertical: 6,
+                    borderRadius: 8,
+                    color: getCategoryStyle(selectedEvent.category).text,
+                    fontWeight: "700",
+                    marginBottom: 16,
+                    fontSize: 12,
+                    borderWidth: 1,
+                    borderColor: getCategoryStyle(selectedEvent.category).border,
                   }}
                 >
-                  {selectedEvent.title}
+                  {selectedEvent.category || "Tanpa Kategori"}
                 </Text>
 
-                <View
-                  style={{
-                    backgroundColor: theme.borderLight,
-                    height: 1,
-                    marginBottom: 12,
-                  }}
-                />
+                <View style={{ backgroundColor: theme.borderLight, height: 1, marginBottom: 16 }} />
 
-                <View style={{ gap: 8, marginBottom: 16 }}>
+                {/* Details Section */}
+                <View style={{ gap: 12, marginBottom: 16 }}>
+                  {/* Tanggal */}
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Ionicons name="location" size={18} color={theme.primary} />
-                    <Text style={{ marginLeft: 8, color: theme.text }}>
-                      {selectedEvent.location}
+                    <View style={{ backgroundColor: theme.primaryLight, padding: 8, borderRadius: 10, marginRight: 12 }}>
+                      <MaterialIcons name="event" size={20} color={theme.primary} />
+                    </View>
+                    <Text style={{ color: theme.text, fontSize: 15 }}>
+                      {formatDate(selectedEvent?.date)}
                     </Text>
                   </View>
+
+                  {/* Waktu */}
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Ionicons name="time" size={18} color={theme.primary} />
-                    <Text style={{ marginLeft: 8, color: theme.text }}>
-                      {selectedEvent.start_time} - {selectedEvent.end_time}
+                    <View style={{ backgroundColor: theme.primaryLight, padding: 8, borderRadius: 10, marginRight: 12 }}>
+                      <MaterialIcons name="access-time" size={20} color={theme.primary} />
+                    </View>
+                    <Text style={{ color: theme.text, fontSize: 15 }}>
+                      {formatTime(selectedEvent?.start_time)} - {formatTime(selectedEvent?.end_time)}
+                    </Text>
+                  </View>
+
+                  {/* Lokasi */}
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <View style={{ backgroundColor: theme.primaryLight, padding: 8, borderRadius: 10, marginRight: 12 }}>
+                      <MaterialIcons name="place" size={20} color={theme.primary} />
+                    </View>
+                    <Text style={{ color: theme.text, fontSize: 15, flex: 1 }}>
+                      {selectedEvent?.location}
+                    </Text>
+                  </View>
+
+                  {/* Harga (Jika ada) */}
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <View style={{ backgroundColor: theme.successLight, padding: 8, borderRadius: 10, marginRight: 12 }}>
+                      <MaterialIcons name="attach-money" size={20} color={theme.success} />
+                    </View>
+                    <Text style={{ color: theme.text, fontSize: 15, fontWeight: "600" }}>
+                      {selectedEvent?.price ? `Rp ${Number(selectedEvent.price).toLocaleString()}` : 'Gratis / Tidak tercantum'}
                     </Text>
                   </View>
                 </View>
 
-                <Text style={{ color: theme.textSecondary, lineHeight: 22 }}>
-                  {selectedEvent.description}
+                <View style={{ backgroundColor: theme.borderLight, height: 1, marginBottom: 16 }} />
+
+                <Text style={{ color: theme.textSecondary, lineHeight: 22, marginBottom: 20 }}>
+                  {selectedEvent.description || "Tidak ada deskripsi."}
                 </Text>
               </>
             )}
-
-            <TouchableOpacity
-              onPress={() => setModalVisible(false)}
-              style={{
-                backgroundColor: theme.primary,
-                padding: 12,
-                borderRadius: 12,
-                marginTop: 20,
-              }}
-            >
-              <Text
-                style={{
-                  textAlign: "center",
-                  color: "#FFFFFF",
-                  fontWeight: "bold",
-                  fontSize: 15,
-                }}
-              >
-                Tutup
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
       </Modal>
