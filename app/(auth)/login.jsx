@@ -406,19 +406,6 @@ export default function LoginScreen() {
           </View>
         </View>
 
-        {/* Forgot Password */}
-        <TouchableOpacity style={{ alignSelf: "flex-end", marginBottom: 24 }}>
-          <Text
-            style={{
-              color: theme.primary,
-              fontSize: 14,
-              fontWeight: "600",
-            }}
-          >
-            Lupa Password?
-          </Text>
-        </TouchableOpacity>
-
         {/* Login Button */}
         <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
           <TouchableOpacity
