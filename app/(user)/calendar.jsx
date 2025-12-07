@@ -78,6 +78,7 @@ export default function UserCalendar() {
       const formatted = res.data.events.map((e) => ({
         ...e,
         start_date: extractDate(e.date), // 🔥 fix timezone
+        date: extractDate(e.date),
       }));
 
       setMyEvents(formatted);

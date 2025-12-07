@@ -656,32 +656,6 @@ export default function EditEvent() {
                 Simpan
               </Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor: theme.border,
-                padding: 16,
-                borderRadius: 12,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              onPress={() => router.back()}
-            >
-              <MaterialIcons name="close" size={20} color={theme.text} />
-              <Text
-                style={{
-                  textAlign: "center",
-                  color: theme.text,
-                  fontWeight: "700",
-                  fontSize: 16,
-                  marginLeft: 8,
-                }}
-              >
-                Batal
-              </Text>
-            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
