@@ -27,6 +27,9 @@ export default function UserProfile() {
   const [pendingEventId, setPendingEventId] = useState(null);
   const [isCancelling, setIsCancelling] = useState(false);
 
+  // State untuk popup detail event (TAMBAHAN BARU)
+  const [selectedEvent, setSelectedEvent] = useState(null);
+
   const isFocused = useIsFocused();
   const api = createApi(token);
 
@@ -56,6 +59,13 @@ export default function UserProfile() {
     return `${String(date.getDate()).padStart(2, "0")}-${String(
       date.getMonth() + 1
     ).padStart(2, "0")}-${date.getFullYear()}`;
+  };
+
+  const formatTime = (t) => (t ? t.substring(0, 5) : "-");
+
+  const getCategoryStyle = (category) => {
+    const cat = category || "Tanpa Kategori";
+    return theme.categories[cat] || theme.categories["Tanpa Kategori"];
   };
 
   const loadMyEvents = async () => {
@@ -97,6 +107,11 @@ export default function UserProfile() {
       setIsCancelling(false);
       setPendingEventId(null);
     }
+  };
+
+  // Handler untuk buka popup detail (TAMBAHAN BARU)
+  const handleCardPress = (item) => {
+    setSelectedEvent(item);
   };
 
   return (
@@ -314,11 +329,12 @@ export default function UserProfile() {
           </View>
         )}
 
-        {/* MANUAL LIST (bukan FlatList) */}
+        {/* MANUAL LIST (bukan FlatList) - TAMBAH onPress */}
         {!loading &&
           myEvents.map((item) => (
-            <View
+            <TouchableOpacity
               key={item.id}
+              onPress={() => handleCardPress(item)}
               style={{
                 padding: 18,
                 borderRadius: 16,
@@ -351,7 +367,10 @@ export default function UserProfile() {
                 </Text>
 
                 <Pressable
-                  onPress={() => confirmCancel(item.id)}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    confirmCancel(item.id);
+                  }}
                   style={{
                     backgroundColor: theme.errorLight,
                     paddingVertical: 6,
@@ -425,12 +444,12 @@ export default function UserProfile() {
                   {item.location}
                 </Text>
               </View>
-            </View>
+            </TouchableOpacity>
           ))}
       </View>
     </ScrollView>
 
-      {/* MODAL KONFIRMASI */}
+      {/* MODAL KONFIRMASI BATAL */}
       <Modal transparent visible={showModal} animationType="fade">
         <View
           style={{
@@ -535,6 +554,152 @@ export default function UserProfile() {
                 </Text>
               </Pressable>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL DETAIL EVENT (TAMBAHAN BARU) */}
+      <Modal visible={!!selectedEvent} transparent animationType="fade">
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: theme.overlay,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: theme.card,
+              borderRadius: 24,
+              padding: 24,
+              width: "100%",
+              maxWidth: 420,
+              shadowColor: theme.shadow,
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.3,
+              shadowRadius: 16,
+              elevation: 16,
+            }}
+          >
+            <Text style={{ fontSize: 22, fontWeight: "bold", color: theme.text, marginBottom: 12 }}>
+              {selectedEvent?.title}
+            </Text>
+
+            {selectedEvent && (
+              <Text
+                style={{
+                  alignSelf: "flex-start",
+                  backgroundColor: getCategoryStyle(selectedEvent.category).bg,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 8,
+                  color: getCategoryStyle(selectedEvent.category).text,
+                  fontWeight: "700",
+                  marginBottom: 16,
+                  fontSize: 13,
+                  borderWidth: 1,
+                  borderColor: getCategoryStyle(selectedEvent.category).border,
+                }}
+              >
+                {selectedEvent.category || "Tanpa Kategori"}
+              </Text>
+            )}
+
+            <View style={{ backgroundColor: theme.borderLight, height: 1, marginBottom: 16 }} />
+
+            <View style={{ gap: 12, marginBottom: 16 }}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={{
+                    backgroundColor: theme.primaryLight,
+                    padding: 8,
+                    borderRadius: 10,
+                    marginRight: 12,
+                  }}
+                >
+                  <MaterialIcons name="event" size={20} color={theme.primary} />
+                </View>
+                <Text style={{ color: theme.text, fontSize: 15 }}>
+                  {formatDate(selectedEvent?.date)}
+                </Text>
+              </View>
+
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={{
+                    backgroundColor: theme.primaryLight,
+                    padding: 8,
+                    borderRadius: 10,
+                    marginRight: 12,
+                  }}
+                >
+                  <MaterialIcons name="access-time" size={20} color={theme.primary} />
+                </View>
+                <Text style={{ color: theme.text, fontSize: 15 }}>
+                  {formatTime(selectedEvent?.start_time)} - {formatTime(selectedEvent?.end_time)}
+                </Text>
+              </View>
+
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={{
+                    backgroundColor: theme.primaryLight,
+                    padding: 8,
+                    borderRadius: 10,
+                    marginRight: 12,
+                  }}
+                >
+                  <MaterialIcons name="place" size={20} color={theme.primary} />
+                </View>
+                <Text style={{ color: theme.text, fontSize: 15, flex: 1 }}>
+                  {selectedEvent?.location}
+                </Text>
+              </View>
+
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={{
+                    backgroundColor: theme.successLight,
+                    padding: 8,
+                    borderRadius: 10,
+                    marginRight: 12,
+                  }}
+                >
+                  <MaterialIcons name="attach-money" size={20} color={theme.success} />
+                </View>
+                <Text style={{ color: theme.text, fontSize: 15, fontWeight: "600" }}>
+                  Rp {Number(selectedEvent?.price).toLocaleString()}
+                </Text>
+              </View>
+            </View>
+
+            <View style={{ backgroundColor: theme.borderLight, height: 1, marginBottom: 16 }} />
+
+            <Text style={{ color: theme.textSecondary, lineHeight: 22, marginBottom: 20 }}>
+              {selectedEvent?.description}
+            </Text>
+
+            <Pressable
+              onPress={() => setSelectedEvent(null)}
+              style={{
+                paddingVertical: 14,
+                borderRadius: 12,
+                backgroundColor: theme.primary,
+              }}
+            >
+              <Text
+                style={{
+                  color: "#FFFFFF",
+                  textAlign: "center",
+                  fontSize: 16,
+                  fontWeight: "700",
+                }}
+              >
+                Tutup
+              </Text>
+            </Pressable>
           </View>
         </View>
       </Modal>
